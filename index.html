@@ -1,1 +1,244 @@
 
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>現場ポータル 試作1号</title>
+
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17202a;--muted:#667085;--nav:#17365d;--line:#e5e7eb}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--nav);color:white;padding:14px 16px;position:sticky;top:0;z-index:5}
+.top{max-width:1100px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.brand{font-weight:800;font-size:20px}
+.langs button{border:1px solid #ffffff55;background:#ffffff18;color:white;padding:8px 10px;border-radius:10px}
+.langs button.active{background:white;color:#17365d}
+main{max-width:1100px;margin:18px auto;padding:0 14px 70px}
+.hero,.notify-box,.card{background:white;border-radius:16px;padding:16px;border:1px solid var(--line)}
+.hero{margin-bottom:14px}
+.hero h1{font-size:22px;margin:0 0 5px}
+.hero p,.card p{color:var(--muted)}
+.notify-box{margin-bottom:14px}
+.notify-actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;background:#eef2f6;padding:9px 12px;border-radius:10px;font-weight:700}
+.notify-actions button{background:#17365d;color:white}
+.notify-actions .secondary{background:#eef2f6;color:#17202a}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card h2{font-size:18px;margin:0 0 10px;display:flex;justify-content:space-between}
+.plan{width:100%;border-collapse:collapse;font-size:13px}
+.plan th,.plan td{padding:8px;border-bottom:1px solid var(--line);text-align:left}
+.badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#eef2f6;font-size:12px}
+.panel{display:none;margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc}
+.panel.show{display:block}
+.procedure-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.step-block{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
+.step-no{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:5px}
+.step-text{font-size:14px;line-height:1.55;font-weight:650}
+footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:9px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:720px){.grid,.procedure-grid{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="top">
+<div class="brand">🏭 <span data-k="title">社内 現場ポータル</span></div>
+<div class="langs">
+<button class="active" onclick="setLang('ja',this)">日本語</button>
+<button onclick="setLang('vi',this)">Tiếng Việt</button>
+</div>
+</div>
+</header>
+
+<main>
+
+<section class="hero">
+<h1 data-k="welcome">本日の現場情報</h1>
+<p data-k="subtitle">掲示板・計画・手順書をひとつの入口に。</p>
+</section>
+
+<section class="notify-box">
+<h3>🔔 <span data-k="notifyTitle">通知テスト</span></h3>
+<p data-k="notifyDesc">この端末で通知を許可して、掲示板更新を想定したテスト通知を表示します。</p>
+<div class="notify-actions">
+<button onclick="enableNotifications()" data-k="notifyEnable">通知を許可</button>
+<button class="secondary" onclick="sendTestNotification()" data-k="notifyTest">テスト通知</button>
+</div>
+<div id="notifyStatus"></div>
+</section>
+
+<div class="grid">
+
+<section class="card">
+<h2>📅 <span data-k="plan">計画</span><span>🔑</span></h2>
+<table class="plan">
+<tr><th data-k="machine">機械</th><th data-k="part">品番</th><th data-k="qty">予定</th><th data-k="status">状態</th></tr>
+<tr><td>1号機</td><td>A-100</td><td>5,000</td><td><span class="badge" data-k="running">生産中</span></td></tr>
+<tr><td>3号機</td><td>B-220</td><td>3,200</td><td><span class="badge" data-k="setup">段取り</span></td></tr>
+</table>
+</section>
+
+<section class="card">
+<h2>🎓 <span data-k="edu">教育</span><span>🔑</span></h2>
+<p data-k="eduText">新人教育・作業手順書・教育動画をここから確認。</p>
+<button onclick="toggle('manual')" data-k="manualBtn">手順書を見る</button>
+<div id="manual" class="panel">
+<b data-k="manualTitle">作業手順書：材料投入</b>
+<div class="procedure-grid" id="procedureGrid"></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🔍 <span data-k="quality">品質</span><span>🔑</span></h2>
+<p data-k="qualityText">本日の品質注意：初品確認後、外観基準を再確認してください。</p>
+</section>
+
+<section class="card">
+<h2>🦺 <span data-k="safety">安全</span><span>🔑</span></h2>
+<p data-k="safetyText">金型周辺作業では安全確認を実施。異常時は設備を停止して報告。</p>
+</section>
+
+<section class="card">
+<h2>🏢 <span data-k="policy">方針</span><span>🔑</span></h2>
+<p data-k="policyText">今月の重点：安全・品質・情報共有。</p>
+</section>
+
+<section class="card">
+<h2>📖 <span data-k="terms">用語</span><span>🔑</span></h2>
+<p data-k="termsText">現場用語を日本語とベトナム語で確認できます。</p>
+<button onclick="toggle('term')" data-k="termBtn">用語を見る</button>
+<div id="term" class="panel">
+<b>初品 / Sản phẩm đầu tiên</b>
+<p data-k="termText">生産開始時に最初に品質確認する製品。</p>
+</div>
+</section>
+
+</div>
+</main>
+
+<footer data-k="prototype">試作1号 — ダミーデータ使用 / 実会社データ未接続</footer>
+
+<script>
+const t={
+ja:{
+title:"社内 現場ポータル",
+welcome:"本日の現場情報",
+subtitle:"掲示板・計画・手順書をひとつの入口に。",
+plan:"計画",machine:"機械",part:"品番",qty:"予定",status:"状態",
+running:"生産中",setup:"段取り",
+edu:"教育",eduText:"新人教育・作業手順書・教育動画をここから確認。",
+manualBtn:"手順書を見る",manualTitle:"作業手順書：材料投入",
+quality:"品質",qualityText:"本日の品質注意：初品確認後、外観基準を再確認してください。",
+safety:"安全",safetyText:"金型周辺作業では安全確認を実施。異常時は設備を停止して報告。",
+policy:"方針",policyText:"今月の重点：安全・品質・情報共有。",
+terms:"用語",termsText:"現場用語を日本語とベトナム語で確認できます。",
+termBtn:"用語を見る",termText:"生産開始時に最初に品質確認する製品。",
+notifyTitle:"通知テスト",
+notifyDesc:"この端末で通知を許可して、掲示板更新を想定したテスト通知を表示します。",
+notifyEnable:"通知を許可",notifyTest:"テスト通知"
+},
+vi:{
+title:"Cổng thông tin hiện trường",
+welcome:"Thông tin sản xuất hôm nay",
+subtitle:"Bảng tin, kế hoạch và hướng dẫn tại một nơi.",
+plan:"Kế hoạch",machine:"Máy",part:"Mã hàng",qty:"Kế hoạch",status:"Trạng thái",
+running:"Đang sản xuất",setup:"Chuẩn bị",
+edu:"Đào tạo",
+eduText:"Xem đào tạo nhân viên mới, hướng dẫn công việc và video.",
+manualBtn:"Xem hướng dẫn",
+manualTitle:"Hướng dẫn công việc: Nạp nguyên liệu",
+quality:"Chất lượng",
+qualityText:"Sau khi kiểm tra sản phẩm đầu tiên, hãy xác nhận lại tiêu chuẩn ngoại quan.",
+safety:"An toàn",
+safetyText:"Kiểm tra an toàn khi làm việc quanh khuôn. Nếu có bất thường, dừng máy và báo cáo.",
+policy:"Phương châm",
+policyText:"Trọng tâm tháng này: An toàn, Chất lượng, Chia sẻ thông tin.",
+terms:"Thuật ngữ",
+termsText:"Có thể kiểm tra thuật ngữ hiện trường bằng tiếng Nhật và tiếng Việt.",
+termBtn:"Xem thuật ngữ",
+termText:"Sản phẩm được kiểm tra chất lượng đầu tiên khi bắt đầu sản xuất.",
+notifyTitle:"Thử thông báo",
+notifyDesc:"Cho phép thông báo trên thiết bị này và hiển thị thông báo thử.",
+notifyEnable:"Cho phép thông báo",
+notifyTest:"Thông báo thử"
+}
+};
+
+const procedureData=[
+["材料が青い線まで減ったら、材料投入をする","Khi nguyên liệu giảm đến vạch màu xanh thì nạp thêm nguyên liệu."],
+["材料名・グレード・色を確認する","Kiểm tra tên vật liệu, cấp độ và màu sắc."],
+["絶対に材料を間違えない","Tuyệt đối không được nhầm vật liệu."],
+["粉砕機の電源をOFFにする","Tắt nguồn điện của máy nghiền."],
+["粉砕機のコンセントを抜く","Rút phích cắm của máy nghiền."],
+["新材と粉砕材を指示された比率で混ぜる","Trộn vật liệu mới và vật liệu nghiền theo tỷ lệ được chỉ định."],
+["乾燥機の運転を停止する","Dừng vận hành máy sấy."],
+["ハシゴの安全ストッパーをセットする","Cài chốt an toàn của thang."],
+["材料を溢さないように投入する","Nạp nguyên liệu cẩn thận để không bị tràn."],
+["投入後、蓋をしてネジを締める","Sau khi nạp xong, đậy nắp và siết vít."],
+["乾燥機をONに戻す","Bật lại máy sấy."],
+["材料が飛散していないか確認する","Kiểm tra xem nguyên liệu có bị phát tán không."],
+["成形作業日報に投入を記録する","Ghi việc nạp nguyên liệu vào nhật báo công tác đúc."]
+];
+
+let currentLang="ja";
+
+function renderProcedure(){
+const box=document.getElementById("procedureGrid");
+box.innerHTML=procedureData.map((x,i)=>
+`<div class="step-block">
+<div class="step-no">${String(i+1).padStart(2,"0")}</div>
+<div class="step-text">${x[currentLang==="ja"?0:1]}</div>
+</div>`
+).join("");
+}
+
+function setLang(lang,btn){
+currentLang=lang;
+renderProcedure();
+document.querySelectorAll("[data-k]").forEach(e=>{
+const k=e.dataset.k;
+if(t[lang][k])e.textContent=t[lang][k];
+});
+document.querySelectorAll(".langs button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+}
+
+function toggle(id){
+document.getElementById(id).classList.toggle("show");
+}
+
+async function enableNotifications(){
+if(!("Notification" in window)){
+document.getElementById("notifyStatus").textContent="このブラウザは通知に対応していません。";
+return;
+}
+const result=await Notification.requestPermission();
+if(result==="granted"){
+document.getElementById("notifyStatus").textContent=
+currentLang==="vi"?"Đã cho phép thông báo.":"通知を許可しました。";
+new Notification(currentLang==="vi"?"Cổng thông tin hiện trường":"現場ポータル",{
+body:currentLang==="vi"?"Thông báo đã được bật.":"通知が有効になりました。"
+});
+}
+}
+
+function sendTestNotification(){
+if(!("Notification" in window)||Notification.permission!=="granted"){
+document.getElementById("notifyStatus").textContent=
+currentLang==="vi"?'Hãy bấm "Cho phép thông báo" trước.':'先に「通知を許可」を押してください。';
+return;
+}
+new Notification(
+currentLang==="vi"?"🔔 Cập nhật bảng tin":"🔔 掲示板が更新されました",
+{body:currentLang==="vi"?"Vui lòng kiểm tra thông tin mới.":"テスト通知：新しいお知らせを確認してください。"}
+);
+}
+
+renderProcedure();
+</script>
+
+</body>
+</html>
