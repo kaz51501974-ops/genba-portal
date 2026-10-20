@@ -294,5 +294,68 @@ async function sendTestNotification(){
 }
 renderProcedure();
 </script>
+<script type="module">
+const status = document.createElement('section');
+status.className='hero';
+status.innerHTML='<h2>ログイン / Đăng nhập</h2><p id="accountStatus" role="status">ログイン機能を準備中…</p><button id="loginButton" disabled>Googleでログイン</button> <button id="logoutButton" hidden>ログアウト</button>';
+const main=document.querySelector('main');
+main.prepend(status);
+const privateArea=document.createElement('div');
+privateArea.hidden=true;
+for(const element of [...main.children]) if(element!==status) privateArea.append(element);
+main.append(privateArea);
+const panel=document.createElement('section');
+panel.className='hero';
+panel.innerHTML=`<h2>掲示板 / Bảng tin</h2><button id="reloadPosts">最新の投稿を確認</button><p id="postStatus" role="status"></p><div id="postsList"></div>
+<section id="adminArea" hidden><h3>管理者：投稿する</h3><form id="postForm">
+<p><label>掲載先 <select id="postCategory"><option>お知らせ</option><option>計画</option><option>教育</option><option>品質</option><option>安全</option><option>方針</option><option>用語</option></select></label></p>
+<p><label>タイトル（日本語）<input id="postTitle" required maxlength="150"></label></p>
+<p><label>本文（日本語）<textarea id="postBody" required maxlength="10000" rows="5"></textarea></label></p>
+<p><label>タイトル（ベトナム語・任意）<input id="postTitleVi" maxlength="150"></label></p>
+<p><label>本文（ベトナム語・任意）<textarea id="postBodyVi" maxlength="10000" rows="5"></textarea></label></p>
+<p>翻訳は手入力です。ベトナム語が空欄なら日本語を表示します。</p>
+<p><label>資料リンク（任意）<input id="postLink" type="url" placeholder="https://…" maxlength="2000"></label></p>
+<button id="publishPost">投稿を公開</button><button id="cancelEdit" type="button" hidden>編集をやめる</button></form>
+<h3>閲覧者の登録</h3><form id="memberForm"><label>Googleアカウントのメール <input id="memberEmail" type="email" required></label> <button>登録</button></form><p id="memberStatus" role="status"></p><div id="memberList"></div></section>`;
+privateArea.prepend(panel);
+const style=document.createElement('style');style.textContent='#adminArea input,#adminArea textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #aaa;border-radius:6px}#postsList article{border-top:1px solid #ddd;padding:14px 0}#postsList p{white-space:pre-wrap;overflow-wrap:anywhere}#adminArea{border-top:2px solid #ddd;margin-top:20px}';document.head.append(style);
+const $=id=>document.getElementById(id);
+const adminEmail='kaz51501974@gmail.com';
+let auth,db,api,user=null,epoch=0,editing=null,posts=[];
+const errorText=e=>'処理できませんでした: '+(e.code||e.message||String(e));
+function safeLink(value){if(!value)return '';const url=new URL(value);if(url.protocol!=='https:')throw Error('資料リンクはhttps://で入力してください。');return url.href;}
+function renderPosts(){
+ $('postsList').replaceChildren();
+ const vi=document.documentElement.lang==='vi';
+ for(const post of posts){const row=document.createElement('article');const title=document.createElement('h3');title.textContent=(vi&&post.titleVi?post.titleVi:post.title)||'';row.append(title);const meta=document.createElement('small');meta.textContent=(post.category||'お知らせ')+' / '+(post.createdAt?.toDate?post.createdAt.toDate().toLocaleString('ja-JP'):'');row.append(meta);const body=document.createElement('p');body.textContent=(vi&&post.bodyVi?post.bodyVi:post.body)||'';row.append(body);
+ try{const href=safeLink(post.link);if(href){const link=document.createElement('a');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='資料を開く / Mở tài liệu';row.append(link);}}catch{}
+ if(user?.email===adminEmail){const edit=document.createElement('button');edit.textContent='編集';edit.onclick=()=>{editing=post.id;for(const [id,key] of [['postTitle','title'],['postBody','body'],['postTitleVi','titleVi'],['postBodyVi','bodyVi'],['postLink','link'],['postCategory','category']])$(id).value=post[key]||'';$('publishPost').textContent='変更を保存';$('cancelEdit').hidden=false;$('postForm').scrollIntoView();};row.append(edit);const del=document.createElement('button');del.textContent='削除';del.onclick=async()=>{if(!confirm('この投稿を削除しますか？'))return;try{await api.deleteDoc(api.doc(db,'posts',post.id));await loadPosts();}catch(e){$('postStatus').textContent=errorText(e);}};row.append(del);}
+ $('postsList').append(row);}
+}
+function resetEdit(){editing=null;$('postForm').reset();$('publishPost').textContent='投稿を公開';$('cancelEdit').hidden=true;}
+async function loadPosts(){const token=epoch;$('postStatus').textContent='読み込み中…';try{const result=await api.getDocs(api.query(api.collection(db,'posts'),api.orderBy('createdAt','desc'),api.limit(50)));if(token!==epoch)return;posts=result.docs.map(d=>({id:d.id,...d.data()}));renderPosts();$('postStatus').textContent=posts.length?'最新50件まで表示しています。':'投稿はまだありません。';}catch(e){if(token===epoch)$('postStatus').textContent=errorText(e);}}
+async function loadMembers(){const token=epoch;try{const result=await api.getDocs(api.collection(db,'members'));if(token!==epoch)return;$('memberList').replaceChildren();for(const item of result.docs){const line=document.createElement('p');line.textContent=item.id+' ';const remove=document.createElement('button');remove.textContent='登録解除';remove.onclick=async()=>{if(!confirm(item.id+' の閲覧登録を解除しますか？'))return;try{await api.deleteDoc(api.doc(db,'members',item.id));await loadMembers();}catch(e){$('memberStatus').textContent=errorText(e);}};line.append(remove);$('memberList').append(line);}}catch(e){if(token===epoch)$('memberStatus').textContent=errorText(e);}}
+$('cancelEdit').onclick=resetEdit;
+$('reloadPosts').onclick=loadPosts;
+new MutationObserver(renderPosts).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+$('postForm').onsubmit=async event=>{event.preventDefault();if(user?.email!==adminEmail)return;const button=$('publishPost');button.disabled=true;try{const title=$('postTitle').value.trim(),body=$('postBody').value.trim();if(!title||!body)throw Error('タイトルと本文を入力してください。');const data={title,body,titleVi:$('postTitleVi').value.trim(),bodyVi:$('postBodyVi').value.trim(),category:$('postCategory').value,link:safeLink($('postLink').value.trim()),updatedAt:api.serverTimestamp()};if(editing){await api.updateDoc(api.doc(db,'posts',editing),data);}else{await api.addDoc(api.collection(db,'posts'),{...data,createdAt:api.serverTimestamp()});}resetEdit();await loadPosts();$('postStatus').textContent='保存しました。端末への一斉通知はまだ接続していません。';}catch(e){$('postStatus').textContent=errorText(e);}finally{button.disabled=false;}};
+$('memberForm').onsubmit=async event=>{event.preventDefault();if(user?.email!==adminEmail)return;try{const email=$('memberEmail').value.trim().toLowerCase();if(!/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(email))throw Error('メールアドレスを確認してください。');await api.setDoc(api.doc(db,'members',email),{createdAt:api.serverTimestamp()});$('memberStatus').textContent='登録しました。';$('memberForm').reset();await loadMembers();}catch(e){$('memberStatus').textContent=errorText(e);}};
+try{
+ const base='https://www.gstatic.com/firebasejs/12.4.0/';
+ const [appApi,authApi,firestoreApi]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);api=firestoreApi;
+ const app=appApi.initializeApp({apiKey:'AIzaSyAooAgoxNflTxzMK2wyYNs6IMPdZ32zNxo',authDomain:'genba-portal.firebaseapp.com',projectId:'genba-portal',storageBucket:'genba-portal.firebasestorage.app',messagingSenderId:'579910922016',appId:'1:579910922016:web:e158b0012238b90802f145'});
+ auth=authApi.getAuth(app);db=api.getFirestore(app);
+ await authApi.setPersistence(auth,authApi.browserSessionPersistence);
+ $('loginButton').disabled=false;
+ $('loginButton').onclick=async()=>{const provider=new authApi.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});try{await authApi.signInWithPopup(auth,provider);}catch(e){$('accountStatus').textContent=errorText(e);}};
+ $('logoutButton').onclick=async()=>{privateArea.hidden=true;try{await authApi.signOut(auth);}catch(e){$('accountStatus').textContent=errorText(e);}};
+ authApi.onAuthStateChanged(auth,async account=>{const token=++epoch;user=account;privateArea.hidden=true;$('adminArea').hidden=true;posts=[];$('postsList').replaceChildren();$('memberList').replaceChildren();resetEdit();$('loginButton').hidden=!!account;$('logoutButton').hidden=!account;
+ if(!account){$('accountStatus').textContent='登録したGoogleアカウントでログインしてください。';return;}
+ $('accountStatus').textContent='閲覧権限を確認中…';
+ try{if(!account.emailVerified)throw Error('メール確認済みのGoogleアカウントが必要です。');const admin=account.email===adminEmail;if(!admin){const membership=await api.getDoc(api.doc(db,'members',account.email));if(!membership.exists())throw Error('このアカウントは閲覧登録されていません。管理者に登録を依頼してください。');}if(token!==epoch)return;privateArea.hidden=false;$('adminArea').hidden=!admin;$('accountStatus').textContent=account.email+(admin?'（管理者）':'（閲覧のみ）');await loadPosts();if(admin&&token===epoch)await loadMembers();}catch(e){if(token===epoch)$('accountStatus').textContent=errorText(e);}
+ });
+}catch(e){$('accountStatus').textContent='ログイン機能の準備に失敗しました。通信を確認して再読み込みしてください。 '+errorText(e);}
+</script>
+
 </body>
 </html>
