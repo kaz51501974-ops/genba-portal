@@ -313,7 +313,9 @@ panel.innerHTML=`<h2>掲示板 / Bảng tin</h2><button id="reloadPosts">最新�
 <p><label>本文（日本語）<textarea id="postBody" required maxlength="10000" rows="5"></textarea></label></p>
 <p><label>タイトル（ベトナム語・任意）<input id="postTitleVi" maxlength="150"></label></p>
 <p><label>本文（ベトナム語・任意）<textarea id="postBodyVi" maxlength="10000" rows="5"></textarea></label></p>
-<p>翻訳は手入力です。ベトナム語が空欄なら日本語を表示します。</p>
+<p><button id="translatePost" type="button">ベトナム語に翻訳</button></p>
+<p id="translateStatus" role="status" aria-live="polite"></p>
+<p>翻訳結果を確認・修正してから公開してください。</p>
 <p><label>資料リンク（任意）<input id="postLink" type="url" placeholder="https://…" maxlength="2000"></label></p>
 <button id="publishPost">投稿を公開</button><button id="cancelEdit" type="button" hidden>編集をやめる</button></form>
 <h3>閲覧者の登録</h3><form id="memberForm"><label>Googleアカウントのメール <input id="memberEmail" type="email" required></label> <button>登録</button></form><p id="memberStatus" role="status"></p><div id="memberList"></div></section>`;
@@ -323,7 +325,87 @@ const $=id=>document.getElementById(id);
 const adminEmail='music10212026@gmail.com';
 let auth,db,api,user=null,epoch=0,editing=null,posts=[];
 const errorText=e=>'処理できませんでした: '+(e.code||e.message||String(e));
-function safeLink(value){if(!value)return '';const url=new URL(value);if(url.protocol!=='https:')throw Error('資料リンクはhttps://で入力してください。');return url.href;}
+$('translatePost').onclick = async () => {
+  const account = user;
+  if (account?.email !== adminEmail) return;
+
+  const title = $('postTitle').value.trim();
+  const body = $('postBody').value.trim();
+
+  if (!title || !body) {
+    $('translateStatus').textContent =
+      '日本語のタイトルと本文を入力してください。';
+    return;
+  }
+
+  if (
+    ($('postTitleVi').value.trim() ||
+     $('postBodyVi').value.trim()) &&
+    !confirm('今あるベトナム語を翻訳結果に置き換えますか？')
+  ) return;
+
+  const startEpoch = epoch;
+  const startEditing = editing;
+  const oldTitleVi = $('postTitleVi').value;
+  const oldBodyVi = $('postBodyVi').value;
+  const button = $('translatePost');
+
+  button.disabled = true;
+  $('publishPost').disabled = true;
+  $('translateStatus').textContent = '翻訳中です…';
+
+  try {
+    const idToken = await account.getIdToken();
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + idToken
+      },
+      body: JSON.stringify({ title, body }),
+      signal: AbortSignal.timeout(70000)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.ok !== true) {
+      throw new Error(result.error || '翻訳できませんでした。');
+    }
+
+    if (
+      epoch !== startEpoch ||
+      editing !== startEditing ||
+      $('postTitle').value.trim() !== title ||
+      $('postBody').value.trim() !== body ||
+      $('postTitleVi').value !== oldTitleVi ||
+      $('postBodyVi').value !== oldBodyVi
+    ) {
+      $('translateStatus').textContent =
+        '入力内容が変わったため反映しませんでした。もう一度翻訳してください。';
+      return;
+    }
+
+    if (
+      typeof result.titleVi !== 'string' ||
+      typeof result.bodyVi !== 'string' ||
+      result.titleVi.length > 150 ||
+      result.bodyVi.length > 10000
+    ) {
+      throw new Error('翻訳結果が入力欄の文字数制限を超えたか、形式が不正です。');
+    }
+
+    $('postTitleVi').value = result.titleVi;
+    $('postBodyVi').value = result.bodyVi;
+    $('translateStatus').textContent =
+      '翻訳できました。内容を確認・修正してから公開してください。';
+  } catch (error) {
+    $('translateStatus').textContent =
+      '翻訳に失敗しました: ' + error.message;
+  } finally {
+    button.disabled = false;
+    $('publishPost').disabled = false;
+  }
+};function safeLink(value){if(!value)return '';const url=new URL(value);if(url.protocol!=='https:')throw Error('資料リンクはhttps://で入力してください。');return url.href;}
 function renderPosts(){
  $('postsList').replaceChildren();
  const vi=document.documentElement.lang==='vi';
