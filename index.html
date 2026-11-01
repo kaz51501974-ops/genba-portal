@@ -320,7 +320,7 @@ panel.innerHTML=`<h2>掲示板 / Bảng tin</h2><button id="reloadPosts">最新�
 privateArea.prepend(panel);
 const style=document.createElement('style');style.textContent='#adminArea input,#adminArea textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #aaa;border-radius:6px}#postsList article{border-top:1px solid #ddd;padding:14px 0}#postsList p{white-space:pre-wrap;overflow-wrap:anywhere}#adminArea{border-top:2px solid #ddd;margin-top:20px}';document.head.append(style);
 const $=id=>document.getElementById(id);
-const adminEmail='kaz51501974@gmail.com';
+const adminEmail='music10212026@gmail.com';
 let auth,db,api,user=null,epoch=0,editing=null,posts=[];
 const errorText=e=>'処理できませんでした: '+(e.code||e.message||String(e));
 function safeLink(value){if(!value)return '';const url=new URL(value);if(url.protocol!=='https:')throw Error('資料リンクはhttps://で入力してください。');return url.href;}
