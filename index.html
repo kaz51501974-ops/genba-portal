@@ -9,18 +9,19 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
 header{background:var(--nav);color:white;padding:14px 16px;position:sticky;top:0;z-index:5}
-.top{max-width:1100px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.top{max-width:1100px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .brand{font-weight:800;font-size:20px}
 .langs button{border:1px solid #ffffff55;background:#ffffff18;color:white;padding:8px 10px;border-radius:10px}
 .langs button.active{background:white;color:#17365d}
-main{max-width:1100px;margin:18px auto;padding:0 14px 70px}
-.hero,.notify-box,.card{background:white;border-radius:16px;padding:16px;border:1px solid var(--line)}
+main{max-width:1100px;margin:18px auto;padding:0 14px 85px}
+.hero,.notify-box,.card{background:white;border-radius:16px;padding:16px;border:1px solid var(--line);min-width:0}
 .hero{margin-bottom:14px}
 .hero h1{font-size:22px;margin:0 0 5px}
 .hero p,.card p{color:var(--muted)}
 .notify-box{margin-bottom:14px}
-.notify-actions{display:flex;gap:8px;flex-wrap:wrap}
-button{border:0;background:#eef2f6;padding:9px 12px;border-radius:10px;font-weight:700}
+.notify-actions,.education-actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;background:#eef2f6;padding:9px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
 .notify-actions button{background:#17365d;color:white}
 .notify-actions .secondary{background:#eef2f6;color:#17202a}
 #notifyStatus{margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -36,6 +37,17 @@ button{border:0;background:#eef2f6;padding:9px 12px;border-radius:10px;font-weig
 .step-no{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:5px}
 .step-text{font-size:14px;line-height:1.55;font-weight:650}
 footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:9px;text-align:center;color:var(--muted);font-size:12px}
+#adminArea input,#adminArea textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #aaa;border-radius:6px;font:inherit}
+#adminArea select{max-width:100%;padding:8px}
+#postsList article{border-top:1px solid #ddd;padding:14px 0}
+#postsList p,.education-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}
+#postsList h3,#educationTitle{overflow-wrap:anywhere}
+#postsList button{margin:8px 6px 0 0}
+#adminArea{border-top:2px solid #ddd;margin-top:20px}
+#accountStatus,#postStatus,#educationStatus{overflow-wrap:anywhere}
+.education-actions{margin-top:12px}
+#postForm{scroll-margin-top:110px}
+[hidden]{display:none!important}
 @media(max-width:720px){.grid,.procedure-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -49,11 +61,64 @@ footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px so
 </div>
 </div>
 </header>
+
 <main>
+<section class="hero">
+<h2>ログイン / Đăng nhập</h2>
+<p id="accountStatus" role="status">ログイン機能を準備中…</p>
+<button id="loginButton" disabled>Googleでログイン</button>
+<button id="logoutButton" hidden>ログアウト</button>
+</section>
+
+<div id="privateArea" hidden>
+<section class="hero">
+<h2>掲示板 / Bảng tin</h2>
+<button id="reloadPosts">最新の投稿を確認</button>
+<p id="postStatus" role="status"></p>
+<div id="postsList"></div>
+
+<section id="adminArea" hidden>
+<h3>管理者：投稿する</h3>
+<p>「教育」に新規投稿すると、教育欄の固定資料になります。差し替えは「教育資料を編集」から行えます。</p>
+<form id="postForm">
+<p><label>掲載先
+<select id="postCategory">
+<option>お知らせ</option><option>計画</option><option>教育</option>
+<option>品質</option><option>安全</option><option>方針</option><option>用語</option>
+</select></label></p>
+<p><label>タイトル（日本語）
+<input id="postTitle" required maxlength="150"></label></p>
+<p><label>本文（日本語）
+<textarea id="postBody" required maxlength="10000" rows="8"></textarea></label></p>
+<p><label>タイトル（ベトナム語・任意）
+<input id="postTitleVi" maxlength="150"></label></p>
+<p><label>本文（ベトナム語・任意）
+<textarea id="postBodyVi" maxlength="10000" rows="8"></textarea></label></p>
+<p><button id="translatePost" type="button">ベトナム語に翻訳</button></p>
+<p id="translateStatus" role="status" aria-live="polite"></p>
+<p>翻訳結果を確認・修正してから公開してください。</p>
+<p><label>資料リンク（任意）
+<input id="postLink" type="url" placeholder="https://…" maxlength="2000"></label></p>
+<button id="publishPost">投稿を公開</button>
+<button id="cancelEdit" type="button" hidden>編集をやめる</button>
+</form>
+
+<h3>閲覧者の登録</h3>
+<form id="memberForm">
+<label>Googleアカウントのメール
+<input id="memberEmail" type="email" required></label>
+<button>登録</button>
+</form>
+<p id="memberStatus" role="status"></p>
+<div id="memberList"></div>
+</section>
+</section>
+
 <section class="hero">
 <h1 data-k="welcome">本日の現場情報</h1>
 <p data-k="subtitle">掲示板・計画・手順書をひとつの入口に。</p>
 </section>
+
 <section class="notify-box">
 <h3>🔔 <span data-k="notifyTitle">通知テスト</span></h3>
 <p data-k="notifyDesc">この端末で通知を許可して、掲示板更新を想定したテスト通知を表示します。</p>
@@ -63,6 +128,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px so
 </div>
 <div id="notifyStatus" role="status" aria-live="polite">通知テスト修正版 v2</div>
 </section>
+
 <div class="grid">
 <section class="card">
 <h2>📅 <span data-k="plan">計画</span><span>🔑</span></h2>
@@ -72,15 +138,26 @@ footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px so
 <tr><td>3号機</td><td>B-220</td><td>3,200</td><td><span class="badge" data-k="setup">段取り</span></td></tr>
 </table>
 </section>
+
 <section class="card">
 <h2>🎓 <span data-k="edu">教育</span><span>🔑</span></h2>
 <p data-k="eduText">新人教育・作業手順書・教育動画をここから確認。</p>
 <button onclick="toggle('manual')" data-k="manualBtn">手順書を見る</button>
+<p id="educationStatus" role="status"></p>
 <div id="manual" class="panel">
+<div id="educationOriginal">
 <b data-k="manualTitle">作業手順書：材料投入</b>
 <div class="procedure-grid" id="procedureGrid"></div>
 </div>
+<div id="educationPublished" hidden>
+<h3 id="educationTitle"></h3>
+<small id="educationDate"></small>
+<div id="educationBody" class="education-body"></div>
+<div id="educationActions" class="education-actions"></div>
+</div>
+</div>
 </section>
+
 <section class="card">
 <h2>🔍 <span data-k="quality">品質</span><span>🔑</span></h2>
 <p data-k="qualityText">本日の品質注意：初品確認後、外観基準を再確認してください。</p>
@@ -103,17 +180,18 @@ footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px so
 </div>
 </section>
 </div>
+</div>
 </main>
 <footer data-k="prototype">試作1号 — ダミーデータ使用 / 実会社データ未接続</footer>
+
 <script>
 const t={
 ja:{
-title:"社内 現場ポータル",
-welcome:"本日の現場情報",
+title:"社内 現場ポータル",welcome:"本日の現場情報",
 subtitle:"掲示板・計画・手順書をひとつの入口に。",
 plan:"計画",machine:"機械",part:"品番",qty:"予定",status:"状態",
-running:"生産中",setup:"段取り",
-edu:"教育",eduText:"新人教育・作業手順書・教育動画をここから確認。",
+running:"生産中",setup:"段取り",edu:"教育",
+eduText:"新人教育・作業手順書・教育動画をここから確認。",
 manualBtn:"手順書を見る",manualTitle:"作業手順書：材料投入",
 quality:"品質",qualityText:"本日の品質注意：初品確認後、外観基準を再確認してください。",
 safety:"安全",safetyText:"金型周辺作業では安全確認を実施。異常時は設備を停止して報告。",
@@ -126,15 +204,12 @@ notifyEnable:"通知を許可",notifyTest:"テスト通知",
 prototype:"試作1号 — ダミーデータ使用 / 実会社データ未接続"
 },
 vi:{
-title:"Cổng thông tin hiện trường",
-welcome:"Thông tin sản xuất hôm nay",
+title:"Cổng thông tin hiện trường",welcome:"Thông tin sản xuất hôm nay",
 subtitle:"Bảng tin, kế hoạch và hướng dẫn tại một nơi.",
 plan:"Kế hoạch",machine:"Máy",part:"Mã hàng",qty:"Kế hoạch",status:"Trạng thái",
-running:"Đang sản xuất",setup:"Chuẩn bị",
-edu:"Đào tạo",
+running:"Đang sản xuất",setup:"Chuẩn bị",edu:"Đào tạo",
 eduText:"Xem đào tạo nhân viên mới, hướng dẫn công việc và video.",
-manualBtn:"Xem hướng dẫn",
-manualTitle:"Hướng dẫn công việc: Nạp nguyên liệu",
+manualBtn:"Xem hướng dẫn",manualTitle:"Hướng dẫn công việc: Nạp nguyên liệu",
 quality:"Chất lượng",
 qualityText:"Sau khi kiểm tra sản phẩm đầu tiên, hãy xác nhận lại tiêu chuẩn ngoại quan.",
 safety:"An toàn",
@@ -147,8 +222,7 @@ termBtn:"Xem thuật ngữ",
 termText:"Sản phẩm được kiểm tra chất lượng đầu tiên khi bắt đầu sản xuất.",
 notifyTitle:"Thử thông báo",
 notifyDesc:"Cho phép thông báo trên thiết bị này và hiển thị thông báo thử.",
-notifyEnable:"Cho phép thông báo",
-notifyTest:"Thông báo thử",
+notifyEnable:"Cho phép thông báo",notifyTest:"Thông báo thử",
 prototype:"Bản thử nghiệm 1 — Dữ liệu mẫu / Chưa kết nối dữ liệu công ty"
 }
 };
@@ -169,275 +243,547 @@ const procedureData=[
 ];
 let currentLang="ja";
 function renderProcedure(){
-  const box=document.getElementById("procedureGrid");
-  box.innerHTML=procedureData.map((x,i)=>
-    `<div class="step-block">
-    <div class="step-no">${String(i+1).padStart(2,"0")}</div>
-    <div class="step-text">${x[currentLang==="ja"?0:1]}</div>
-    </div>`
-  ).join("");
+ const box=document.getElementById("procedureGrid");
+ box.replaceChildren();
+ procedureData.forEach((item,index)=>{
+  const block=document.createElement("div");
+  block.className="step-block";
+  const no=document.createElement("div");
+  no.className="step-no";
+  no.textContent=String(index+1).padStart(2,"0");
+  const text=document.createElement("div");
+  text.className="step-text";
+  text.textContent=item[currentLang==="ja"?0:1];
+  block.append(no,text);
+  box.append(block);
+ });
 }
 function setLang(lang,btn){
-  currentLang=lang;
-  document.documentElement.lang=lang;
-  renderProcedure();
-  document.querySelectorAll("[data-k]").forEach(e=>{
-    const k=e.dataset.k;
-    if(t[lang][k])e.textContent=t[lang][k];
-  });
-  document.querySelectorAll(".langs button").forEach(b=>{
-    b.classList.remove("active");
-  });
-  btn.classList.add("active");
+ currentLang=lang;
+ document.documentElement.lang=lang;
+ renderProcedure();
+ document.querySelectorAll("[data-k]").forEach(element=>{
+  const value=t[lang][element.dataset.k];
+  if(value)element.textContent=value;
+ });
+ document.querySelectorAll(".langs button").forEach(button=>{
+  button.classList.remove("active");
+ });
+ btn.classList.add("active");
 }
 function toggle(id){
-  document.getElementById(id).classList.toggle("show");
+ document.getElementById(id).classList.toggle("show");
 }
 function notifyMessage(ja,vi){
-  document.getElementById("notifyStatus").textContent=
-    currentLang==="vi"?vi:ja;
+ document.getElementById("notifyStatus").textContent=currentLang==="vi"?vi:ja;
 }
 function checkNotificationSupport(){
-  if(!window.isSecureContext){
-    throw new Error("HTTPSで開いてください。");
-  }
-  if(!("Notification" in window) ||
-     !("serviceWorker" in navigator)){
-    throw new Error("このブラウザは通知に対応していません。");
-  }
+ if(!window.isSecureContext)throw Error("HTTPSで開いてください。");
+ if(!("Notification" in window)||!("serviceWorker" in navigator)){
+  throw Error("このブラウザは通知に対応していません。");
+ }
 }
 async function prepareNotifications(){
-  checkNotificationSupport();
-  let timer;
-  try{
-    return await Promise.race([
-      (async()=>{
-        await navigator.serviceWorker.register("/sw.js");
-        return await navigator.serviceWorker.ready;
-      })(),
-      new Promise((_,reject)=>{
-        timer=setTimeout(()=>{
-          reject(new Error(
-            "sw.jsの準備が完了しません。配信設定を確認してください。"
-          ));
-        },15000);
-      })
-    ]);
-  }finally{
-    clearTimeout(timer);
-  }
+ checkNotificationSupport();
+ let timer;
+ try{
+  return await Promise.race([
+   (async()=>{
+    await navigator.serviceWorker.register("/sw.js");
+    return await navigator.serviceWorker.ready;
+   })(),
+   new Promise((_,reject)=>{
+    timer=setTimeout(()=>reject(Error("sw.jsの準備が完了しません。配信設定を確認してください。")),15000);
+   })
+  ]);
+ }finally{clearTimeout(timer);}
 }
 async function enableNotifications(){
-  try{
-    checkNotificationSupport();
-    const result=await Notification.requestPermission();
-    if(result!=="granted"){
-      notifyMessage(
-        "通知が許可されていません。",
-        "Thông báo chưa được cho phép."
-      );
-      return;
-    }
-    notifyMessage(
-      "通知の準備中…",
-      "Đang chuẩn bị thông báo…"
-    );
-    await prepareNotifications();
-    notifyMessage(
-      "準備完了。「テスト通知」を押してください。",
-      'Đã sẵn sàng. Hãy bấm "Thông báo thử".'
-    );
-  }catch(error){
-    notifyMessage(
-      "通知の準備に失敗: "+error.message,
-      "Không thể chuẩn bị thông báo: "+error.message
-    );
+ try{
+  checkNotificationSupport();
+  const permission=await Notification.requestPermission();
+  if(permission!=="granted"){
+   notifyMessage("通知が許可されていません。","Thông báo chưa được cho phép.");
+   return;
   }
+  notifyMessage("通知の準備中…","Đang chuẩn bị thông báo…");
+  await prepareNotifications();
+  notifyMessage("準備完了。「テスト通知」を押してください。",'Đã sẵn sàng. Hãy bấm "Thông báo thử".');
+ }catch(error){
+  notifyMessage("通知の準備に失敗: "+error.message,"Không thể chuẩn bị thông báo: "+error.message);
+ }
 }
 async function sendTestNotification(){
-  try{
-    checkNotificationSupport();
-    if(Notification.permission!=="granted"){
-      notifyMessage(
-        "先に「通知を許可」を押してください。",
-        'Hãy bấm "Cho phép thông báo" trước.'
-      );
-      return;
-    }
-    notifyMessage(
-      "テスト通知を準備中…",
-      "Đang chuẩn bị thông báo thử…"
-    );
-    const registration=await prepareNotifications();
-    await registration.showNotification(
-      currentLang==="vi"
-        ? "🔔 Cập nhật bảng tin"
-        : "🔔 掲示板が更新されました",
-      {
-        body:currentLang==="vi"
-          ? "Vui lòng kiểm tra thông tin mới."
-          : "テスト通知：新しいお知らせを確認してください。",
-        tag:"genba-test-"+Date.now(),
-        data:{url:"/"}
-      }
-    );
-    notifyMessage(
-      "通知の表示要求が完了しました。通知一覧を確認してください。",
-      "Đã yêu cầu hiển thị. Hãy kiểm tra danh sách thông báo."
-    );
-  }catch(error){
-    notifyMessage(
-      "テスト通知に失敗: "+error.message,
-      "Thông báo thử thất bại: "+error.message
-    );
+ try{
+  checkNotificationSupport();
+  if(Notification.permission!=="granted"){
+   notifyMessage("先に「通知を許可」を押してください。",'Hãy bấm "Cho phép thông báo" trước.');
+   return;
   }
+  notifyMessage("テスト通知を準備中…","Đang chuẩn bị thông báo thử…");
+  const registration=await prepareNotifications();
+  await registration.showNotification(
+   currentLang==="vi"?"🔔 Cập nhật bảng tin":"🔔 掲示板が更新されました",
+   {
+    body:currentLang==="vi"?"Vui lòng kiểm tra thông tin mới.":"テスト通知：新しいお知らせを確認してください。",
+    tag:"genba-test-"+Date.now(),
+    data:{url:"/"}
+   }
+  );
+  notifyMessage("通知の表示要求が完了しました。通知一覧を確認してください。","Đã yêu cầu hiển thị. Hãy kiểm tra danh sách thông báo.");
+ }catch(error){
+  notifyMessage("テスト通知に失敗: "+error.message,"Thông báo thử thất bại: "+error.message);
+ }
 }
 renderProcedure();
 </script>
+
 <script type="module">
-const status = document.createElement('section');
-status.className='hero';
-status.innerHTML='<h2>ログイン / Đăng nhập</h2><p id="accountStatus" role="status">ログイン機能を準備中…</p><button id="loginButton" disabled>Googleでログイン</button> <button id="logoutButton" hidden>ログアウト</button>';
-const main=document.querySelector('main');
-main.prepend(status);
-const privateArea=document.createElement('div');
-privateArea.hidden=true;
-for(const element of [...main.children]) if(element!==status) privateArea.append(element);
-main.append(privateArea);
-const panel=document.createElement('section');
-panel.className='hero';
-panel.innerHTML=`<h2>掲示板 / Bảng tin</h2><button id="reloadPosts">最新の投稿を確認</button><p id="postStatus" role="status"></p><div id="postsList"></div>
-<section id="adminArea" hidden><h3>管理者：投稿する</h3><form id="postForm">
-<p><label>掲載先 <select id="postCategory"><option>お知らせ</option><option>計画</option><option>教育</option><option>品質</option><option>安全</option><option>方針</option><option>用語</option></select></label></p>
-<p><label>タイトル（日本語）<input id="postTitle" required maxlength="150"></label></p>
-<p><label>本文（日本語）<textarea id="postBody" required maxlength="10000" rows="5"></textarea></label></p>
-<p><label>タイトル（ベトナム語・任意）<input id="postTitleVi" maxlength="150"></label></p>
-<p><label>本文（ベトナム語・任意）<textarea id="postBodyVi" maxlength="10000" rows="5"></textarea></label></p>
-<p><button id="translatePost" type="button">ベトナム語に翻訳</button></p>
-<p id="translateStatus" role="status" aria-live="polite"></p>
-<p>翻訳結果を確認・修正してから公開してください。</p>
-<p><label>資料リンク（任意）<input id="postLink" type="url" placeholder="https://…" maxlength="2000"></label></p>
-<button id="publishPost">投稿を公開</button><button id="cancelEdit" type="button" hidden>編集をやめる</button></form>
-<h3>閲覧者の登録</h3><form id="memberForm"><label>Googleアカウントのメール <input id="memberEmail" type="email" required></label> <button>登録</button></form><p id="memberStatus" role="status"></p><div id="memberList"></div></section>`;
-privateArea.prepend(panel);
-const style=document.createElement('style');style.textContent='#adminArea input,#adminArea textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #aaa;border-radius:6px}#postsList article{border-top:1px solid #ddd;padding:14px 0}#postsList p{white-space:pre-wrap;overflow-wrap:anywhere}#adminArea{border-top:2px solid #ddd;margin-top:20px}';document.head.append(style);
 const $=id=>document.getElementById(id);
+const privateArea=$('privateArea');
 const adminEmail='music10212026@gmail.com';
-let auth,db,api,user=null,epoch=0,editing=null,posts=[];
-const errorText=e=>'処理できませんでした: '+(e.code||e.message||String(e));
-$('translatePost').onclick = async () => {
-  const account = user;
-  if (account?.email !== adminEmail) return;
+let auth,db,api,user=null,epoch=0,editing=null;
+let posts=[],educationPosts=[];
+let postsRequest=0,educationRequest=0;
+let translating=false,saving=false;
 
-  const title = $('postTitle').value.trim();
-  const body = $('postBody').value.trim();
+const errorText=error=>'処理できませんでした: '+(error.code||error.message||String(error));
 
-  if (!title || !body) {
-    $('translateStatus').textContent =
-      '日本語のタイトルと本文を入力してください。';
-    return;
-  }
-
-  if (
-    ($('postTitleVi').value.trim() ||
-     $('postBodyVi').value.trim()) &&
-    !confirm('今あるベトナム語を翻訳結果に置き換えますか？')
-  ) return;
-
-  const startEpoch = epoch;
-  const startEditing = editing;
-  const oldTitleVi = $('postTitleVi').value;
-  const oldBodyVi = $('postBodyVi').value;
-  const button = $('translatePost');
-
-  button.disabled = true;
-  $('publishPost').disabled = true;
-  $('translateStatus').textContent = '翻訳中です…';
-
-  try {
-    const idToken = await account.getIdToken();
-    const response = await fetch('/api/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + idToken
-      },
-      body: JSON.stringify({ title, body }),
-      signal: AbortSignal.timeout(70000)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || result.ok !== true) {
-      throw new Error(result.error || '翻訳できませんでした。');
-    }
-
-    if (
-      epoch !== startEpoch ||
-      editing !== startEditing ||
-      $('postTitle').value.trim() !== title ||
-      $('postBody').value.trim() !== body ||
-      $('postTitleVi').value !== oldTitleVi ||
-      $('postBodyVi').value !== oldBodyVi
-    ) {
-      $('translateStatus').textContent =
-        '入力内容が変わったため反映しませんでした。もう一度翻訳してください。';
-      return;
-    }
-
-    if (
-      typeof result.titleVi !== 'string' ||
-      typeof result.bodyVi !== 'string' ||
-      result.titleVi.length > 150 ||
-      result.bodyVi.length > 10000
-    ) {
-      throw new Error('翻訳結果が入力欄の文字数制限を超えたか、形式が不正です。');
-    }
-
-    $('postTitleVi').value = result.titleVi;
-    $('postBodyVi').value = result.bodyVi;
-    $('translateStatus').textContent =
-      '翻訳できました。内容を確認・修正してから公開してください。';
-  } catch (error) {
-    $('translateStatus').textContent =
-      '翻訳に失敗しました: ' + error.message;
-  } finally {
-    button.disabled = false;
-    $('publishPost').disabled = false;
-  }
-};function safeLink(value){if(!value)return '';const url=new URL(value);if(url.protocol!=='https:')throw Error('資料リンクはhttps://で入力してください。');return url.href;}
+function safeLink(value){
+ if(!value)return '';
+ const url=new URL(value);
+ if(url.protocol!=='https:'){
+  throw Error('資料リンクはhttps://で入力してください。');
+ }
+ return url.href;
+}
+function updateButtons(){
+ $('translatePost').disabled=translating||saving;
+ $('publishPost').disabled=translating||saving;
+ $('cancelEdit').disabled=translating||saving;
+}
+function resetEdit(){
+ editing=null;
+ $('postForm').reset();
+ $('publishPost').textContent='投稿を公開';
+ $('cancelEdit').hidden=true;
+ $('translateStatus').textContent='';
+}
+function startEdit(post){
+ if(user?.email!==adminEmail)return;
+ if(translating||saving){
+  $('postStatus').textContent='処理が終わってから編集してください。';
+  return;
+ }
+ editing=post.id;
+ for(const [id,key] of [
+  ['postTitle','title'],['postBody','body'],
+  ['postTitleVi','titleVi'],['postBodyVi','bodyVi'],
+  ['postLink','link'],['postCategory','category']
+ ]){
+  $(id).value=post[key]||'';
+ }
+ $('publishPost').textContent='変更を保存';
+ $('cancelEdit').hidden=false;
+ $('translateStatus').textContent='';
+ $('postForm').scrollIntoView({block:'start'});
+}
+function addDocumentLink(container,value,vi){
+ try{
+  const href=safeLink(value);
+  if(!href)return;
+  const link=document.createElement('a');
+  link.href=href;
+  link.target='_blank';
+  link.rel='noopener noreferrer';
+  link.textContent=vi?'Mở tài liệu':'資料を開く';
+  container.append(link);
+ }catch{}
+}
 function renderPosts(){
  $('postsList').replaceChildren();
  const vi=document.documentElement.lang==='vi';
- for(const post of posts){const row=document.createElement('article');const title=document.createElement('h3');title.textContent=(vi&&post.titleVi?post.titleVi:post.title)||'';row.append(title);const meta=document.createElement('small');meta.textContent=(post.category||'お知らせ')+' / '+(post.createdAt?.toDate?post.createdAt.toDate().toLocaleString('ja-JP'):'');row.append(meta);const body=document.createElement('p');body.textContent=(vi&&post.bodyVi?post.bodyVi:post.body)||'';row.append(body);
- try{const href=safeLink(post.link);if(href){const link=document.createElement('a');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='資料を開く / Mở tài liệu';row.append(link);}}catch{}
- if(user?.email===adminEmail){const edit=document.createElement('button');edit.textContent='編集';edit.onclick=()=>{editing=post.id;for(const [id,key] of [['postTitle','title'],['postBody','body'],['postTitleVi','titleVi'],['postBodyVi','bodyVi'],['postLink','link'],['postCategory','category']])$(id).value=post[key]||'';$('publishPost').textContent='変更を保存';$('cancelEdit').hidden=false;$('postForm').scrollIntoView();};row.append(edit);const del=document.createElement('button');del.textContent='削除';del.onclick=async()=>{if(!confirm('この投稿を削除しますか？'))return;try{await api.deleteDoc(api.doc(db,'posts',post.id));await loadPosts();}catch(e){$('postStatus').textContent=errorText(e);}};row.append(del);}
- $('postsList').append(row);}
+ for(const post of posts){
+  const row=document.createElement('article');
+  const title=document.createElement('h3');
+  title.textContent=(vi&&post.titleVi?post.titleVi:post.title)||'';
+  const meta=document.createElement('small');
+  meta.textContent=(post.category||'お知らせ')+' / '+
+   (post.createdAt?.toDate?post.createdAt.toDate().toLocaleString('ja-JP'):'');
+  const body=document.createElement('p');
+  body.textContent=(vi&&post.bodyVi?post.bodyVi:post.body)||'';
+  row.append(title,meta,body);
+  addDocumentLink(row,post.link,vi);
+
+  if(user?.email===adminEmail){
+   const edit=document.createElement('button');
+   edit.type='button';
+   edit.textContent='編集';
+   edit.onclick=()=>startEdit(post);
+
+   const del=document.createElement('button');
+   del.type='button';
+   del.textContent='削除';
+   del.onclick=async()=>{
+    if(saving||translating)return;
+    if(!confirm('この投稿を削除しますか？'))return;
+    const session=epoch;
+    del.disabled=true;
+    try{
+     await api.deleteDoc(api.doc(db,'posts',post.id));
+     if(session!==epoch)return;
+     if(editing===post.id)resetEdit();
+     await loadPosts();
+    }catch(error){
+     if(session===epoch)$('postStatus').textContent=errorText(error);
+    }finally{
+     del.disabled=false;
+    }
+   };
+   row.append(edit,del);
+  }
+  $('postsList').append(row);
+ }
 }
-function resetEdit(){editing=null;$('postForm').reset();$('publishPost').textContent='投稿を公開';$('cancelEdit').hidden=true;}
-async function loadPosts(){const token=epoch;$('postStatus').textContent='読み込み中…';try{const result=await api.getDocs(api.query(api.collection(db,'posts'),api.orderBy('createdAt','desc'),api.limit(50)));if(token!==epoch)return;posts=result.docs.map(d=>({id:d.id,...d.data()}));renderPosts();$('postStatus').textContent=posts.length?'最新50件まで表示しています。':'投稿はまだありません。';}catch(e){if(token===epoch)$('postStatus').textContent=errorText(e);}}
-async function loadMembers(){const token=epoch;try{const result=await api.getDocs(api.collection(db,'members'));if(token!==epoch)return;$('memberList').replaceChildren();for(const item of result.docs){const line=document.createElement('p');line.textContent=item.id+' ';const remove=document.createElement('button');remove.textContent='登録解除';remove.onclick=async()=>{if(!confirm(item.id+' の閲覧登録を解除しますか？'))return;try{await api.deleteDoc(api.doc(db,'members',item.id));await loadMembers();}catch(e){$('memberStatus').textContent=errorText(e);}};line.append(remove);$('memberList').append(line);}}catch(e){if(token===epoch)$('memberStatus').textContent=errorText(e);}}
+function renderEducation(){
+ const latest=educationPosts[0];
+ const show=!!latest&&!privateArea.hidden;
+ $('educationOriginal').hidden=show;
+ $('educationPublished').hidden=!show;
+ $('educationTitle').textContent='';
+ $('educationDate').textContent='';
+ $('educationBody').textContent='';
+ $('educationActions').replaceChildren();
+ if(!show)return;
+
+ const vi=document.documentElement.lang==='vi';
+ $('educationTitle').textContent=(vi&&latest.titleVi?latest.titleVi:latest.title)||'';
+ $('educationBody').textContent=(vi&&latest.bodyVi?latest.bodyVi:latest.body)||'';
+ const date=latest.updatedAt||latest.createdAt;
+ if(date?.toDate){
+  $('educationDate').textContent=(vi?'Cập nhật: ':'更新日時：')+
+   date.toDate().toLocaleString(vi?'vi-VN':'ja-JP');
+ }
+ addDocumentLink($('educationActions'),latest.link,vi);
+ if(user?.email===adminEmail){
+  const edit=document.createElement('button');
+  edit.type='button';
+  edit.textContent='教育資料を編集';
+  edit.onclick=()=>startEdit(latest);
+  $('educationActions').append(edit);
+ }
+}
+async function loadEducation(){
+ const session=epoch;
+ const request=++educationRequest;
+ $('educationStatus').textContent='教育資料を確認中…';
+ try{
+  const result=await api.getDocs(api.query(
+   api.collection(db,'posts'),
+   api.where('category','==','教育')
+  ));
+  if(session!==epoch||request!==educationRequest||privateArea.hidden)return;
+
+  const millis=value=>value?.toMillis?value.toMillis():0;
+  educationPosts=result.docs
+   .map(doc=>({...doc.data(),id:doc.id}))
+   .sort((a,b)=>millis(b.createdAt)-millis(a.createdAt)||b.id.localeCompare(a.id));
+
+  renderEducation();
+  $('educationStatus').textContent='';
+ }catch(error){
+  if(session!==epoch||request!==educationRequest)return;
+  // 古い資料を最新と誤認しないよう、失敗時は内容を非表示にする
+  educationPosts=[];
+  renderEducation();
+  $('educationOriginal').hidden=true;
+  $('educationStatus').textContent=
+   '教育資料を取得できませんでした。「最新の投稿を確認」で再試行してください。 '+errorText(error);
+ }
+}
+async function loadPosts(){
+ if(!user||privateArea.hidden)return;
+ const session=epoch;
+ const request=++postsRequest;
+ $('postStatus').textContent='読み込み中…';
+ const educationTask=loadEducation();
+ try{
+  const result=await api.getDocs(api.query(
+   api.collection(db,'posts'),
+   api.orderBy('createdAt','desc'),
+   api.limit(50)
+  ));
+  if(session!==epoch||request!==postsRequest)return;
+  posts=result.docs.map(doc=>({...doc.data(),id:doc.id}));
+  renderPosts();
+  $('postStatus').textContent=posts.length?'最新50件まで表示しています。':'投稿はまだありません。';
+ }catch(error){
+  if(session===epoch&&request===postsRequest){
+   $('postStatus').textContent=errorText(error);
+  }
+ }finally{
+  await educationTask;
+ }
+}
+async function loadMembers(){
+ const session=epoch;
+ try{
+  const result=await api.getDocs(api.collection(db,'members'));
+  if(session!==epoch)return;
+  $('memberList').replaceChildren();
+  for(const item of result.docs){
+   const line=document.createElement('p');
+   line.textContent=item.id+' ';
+   const remove=document.createElement('button');
+   remove.type='button';
+   remove.textContent='登録解除';
+   remove.onclick=async()=>{
+    if(!confirm(item.id+' の閲覧登録を解除しますか？'))return;
+    const actionSession=epoch;
+    try{
+     await api.deleteDoc(api.doc(db,'members',item.id));
+     if(actionSession===epoch)await loadMembers();
+    }catch(error){
+     if(actionSession===epoch)$('memberStatus').textContent=errorText(error);
+    }
+   };
+   line.append(remove);
+   $('memberList').append(line);
+  }
+ }catch(error){
+  if(session===epoch)$('memberStatus').textContent=errorText(error);
+ }
+}
 $('cancelEdit').onclick=resetEdit;
-$('reloadPosts').onclick=loadPosts;
-new MutationObserver(renderPosts).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-$('postForm').onsubmit=async event=>{event.preventDefault();if(user?.email!==adminEmail)return;const button=$('publishPost');button.disabled=true;try{const title=$('postTitle').value.trim(),body=$('postBody').value.trim();if(!title||!body)throw Error('タイトルと本文を入力してください。');const data={title,body,titleVi:$('postTitleVi').value.trim(),bodyVi:$('postBodyVi').value.trim(),category:$('postCategory').value,link:safeLink($('postLink').value.trim()),updatedAt:api.serverTimestamp()};if(editing){await api.updateDoc(api.doc(db,'posts',editing),data);}else{await api.addDoc(api.collection(db,'posts'),{...data,createdAt:api.serverTimestamp()});}resetEdit();await loadPosts();$('postStatus').textContent='保存しました。端末への一斉通知はまだ接続していません。';}catch(e){$('postStatus').textContent=errorText(e);}finally{button.disabled=false;}};
-$('memberForm').onsubmit=async event=>{event.preventDefault();if(user?.email!==adminEmail)return;try{const email=$('memberEmail').value.trim().toLowerCase();if(!/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(email))throw Error('メールアドレスを確認してください。');await api.setDoc(api.doc(db,'members',email),{createdAt:api.serverTimestamp()});$('memberStatus').textContent='登録しました。';$('memberForm').reset();await loadMembers();}catch(e){$('memberStatus').textContent=errorText(e);}};
+$('reloadPosts').onclick=()=>loadPosts();
+new MutationObserver(()=>{
+ renderPosts();
+ renderEducation();
+}).observe(document.documentElement,{
+ attributes:true,attributeFilter:['lang']
+});
+
+$('translatePost').onclick=async()=>{
+ const account=user;
+ if(account?.email!==adminEmail||translating||saving)return;
+ const title=$('postTitle').value.trim();
+ const body=$('postBody').value.trim();
+ if(!title||!body){
+  $('translateStatus').textContent='日本語のタイトルと本文を入力してください。';
+  return;
+ }
+ if(
+  ($('postTitleVi').value.trim()||$('postBodyVi').value.trim())&&
+  !confirm('今あるベトナム語を翻訳結果に置き換えますか？')
+ )return;
+
+ const session=epoch;
+ const editId=editing;
+ const oldTitleVi=$('postTitleVi').value;
+ const oldBodyVi=$('postBodyVi').value;
+ translating=true;
+ updateButtons();
+ $('translateStatus').textContent='翻訳中です…';
+ try{
+  const idToken=await account.getIdToken();
+  const response=await fetch('/api/translate',{
+   method:'POST',
+   headers:{
+    'Content-Type':'application/json',
+    'Authorization':'Bearer '+idToken
+   },
+   body:JSON.stringify({title,body}),
+   signal:AbortSignal.timeout(70000)
+  });
+  const result=await response.json();
+  if(session!==epoch)return;
+  if(!response.ok||result.ok!==true){
+   throw Error(result.error||'翻訳できませんでした。');
+  }
+  if(
+   editing!==editId||
+   $('postTitle').value.trim()!==title||
+   $('postBody').value.trim()!==body||
+   $('postTitleVi').value!==oldTitleVi||
+   $('postBodyVi').value!==oldBodyVi
+  ){
+   $('translateStatus').textContent=
+    '入力内容が変わったため反映しませんでした。もう一度翻訳してください。';
+   return;
+  }
+  if(
+   typeof result.titleVi!=='string'||
+   typeof result.bodyVi!=='string'||
+   result.titleVi.length>150||
+   result.bodyVi.length>10000
+  ){
+   throw Error('翻訳結果が入力欄の文字数制限を超えたか、形式が不正です。');
+  }
+  $('postTitleVi').value=result.titleVi;
+  $('postBodyVi').value=result.bodyVi;
+  $('translateStatus').textContent='翻訳できました。内容を確認・修正してから公開してください。';
+ }catch(error){
+  if(session===epoch)$('translateStatus').textContent='翻訳に失敗しました: '+error.message;
+ }finally{
+  translating=false;
+  updateButtons();
+ }
+};
+
+$('postForm').onsubmit=async event=>{
+ event.preventDefault();
+ if(user?.email!==adminEmail||saving||translating)return;
+ const session=epoch;
+ const editId=editing;
+ saving=true;
+ updateButtons();
+ try{
+  const title=$('postTitle').value.trim();
+  const body=$('postBody').value.trim();
+  if(!title||!body)throw Error('タイトルと本文を入力してください。');
+  const data={
+   title,body,
+   titleVi:$('postTitleVi').value.trim(),
+   bodyVi:$('postBodyVi').value.trim(),
+   category:$('postCategory').value,
+   link:safeLink($('postLink').value.trim()),
+   updatedAt:api.serverTimestamp()
+  };
+  if(editId){
+   await api.updateDoc(api.doc(db,'posts',editId),data);
+  }else{
+   await api.addDoc(api.collection(db,'posts'),{
+    ...data,createdAt:api.serverTimestamp()
+   });
+  }
+  if(session!==epoch)return;
+  resetEdit();
+  await loadPosts();
+  if(session===epoch){
+   $('postStatus').textContent+=
+    ' 保存しました。端末への一斉通知はまだ接続していません。';
+  }
+ }catch(error){
+  if(session===epoch)$('postStatus').textContent=errorText(error);
+ }finally{
+  saving=false;
+  updateButtons();
+ }
+};
+
+$('memberForm').onsubmit=async event=>{
+ event.preventDefault();
+ if(user?.email!==adminEmail)return;
+ const session=epoch;
+ try{
+  const email=$('memberEmail').value.trim().toLowerCase();
+  if(!/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(email)){
+   throw Error('メールアドレスを確認してください。');
+  }
+  await api.setDoc(api.doc(db,'members',email),{
+   createdAt:api.serverTimestamp()
+  });
+  if(session!==epoch)return;
+  $('memberStatus').textContent='登録しました。';
+  $('memberForm').reset();
+  await loadMembers();
+ }catch(error){
+  if(session===epoch)$('memberStatus').textContent=errorText(error);
+ }
+};
+
+function clearPrivateContent(){
+ ++postsRequest;
+ ++educationRequest;
+ privateArea.hidden=true;
+ $('adminArea').hidden=true;
+ posts=[];
+ educationPosts=[];
+ $('postsList').replaceChildren();
+ $('memberList').replaceChildren();
+ $('postStatus').textContent='';
+ $('memberStatus').textContent='';
+ $('educationStatus').textContent='';
+ $('memberForm').reset();
+ resetEdit();
+ renderEducation();
+}
+
 try{
  const base='https://www.gstatic.com/firebasejs/12.4.0/';
- const [appApi,authApi,firestoreApi]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);api=firestoreApi;
- const app=appApi.initializeApp({apiKey:'AIzaSyAooAgoxNflTxzMK2wyYNs6IMPdZ32zNxo',authDomain:'genba-portal.firebaseapp.com',projectId:'genba-portal',storageBucket:'genba-portal.firebasestorage.app',messagingSenderId:'579910922016',appId:'1:579910922016:web:e158b0012238b90802f145'});
- auth=authApi.getAuth(app);db=api.getFirestore(app);
+ const [appApi,authApi,firestoreApi]=await Promise.all([
+  import(base+'firebase-app.js'),
+  import(base+'firebase-auth.js'),
+  import(base+'firebase-firestore.js')
+ ]);
+ api=firestoreApi;
+ const app=appApi.initializeApp({
+  apiKey:'AIzaSyAooAgoxNflTxzMK2wyYNs6IMPdZ32zNxo',
+  authDomain:'genba-portal.firebaseapp.com',
+  projectId:'genba-portal',
+  storageBucket:'genba-portal.firebasestorage.app',
+  messagingSenderId:'579910922016',
+  appId:'1:579910922016:web:e158b0012238b90802f145'
+ });
+ auth=authApi.getAuth(app);
+ db=api.getFirestore(app);
  await authApi.setPersistence(auth,authApi.browserSessionPersistence);
  $('loginButton').disabled=false;
- $('loginButton').onclick=async()=>{const provider=new authApi.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});try{await authApi.signInWithPopup(auth,provider);}catch(e){$('accountStatus').textContent=errorText(e);}};
- $('logoutButton').onclick=async()=>{privateArea.hidden=true;try{await authApi.signOut(auth);}catch(e){$('accountStatus').textContent=errorText(e);}};
- authApi.onAuthStateChanged(auth,async account=>{const token=++epoch;user=account;privateArea.hidden=true;$('adminArea').hidden=true;posts=[];$('postsList').replaceChildren();$('memberList').replaceChildren();resetEdit();$('loginButton').hidden=!!account;$('logoutButton').hidden=!account;
- if(!account){$('accountStatus').textContent='登録したGoogleアカウントでログインしてください。';return;}
- $('accountStatus').textContent='閲覧権限を確認中…';
- try{if(!account.emailVerified)throw Error('メール確認済みのGoogleアカウントが必要です。');const admin=account.email===adminEmail;if(!admin){const membership=await api.getDoc(api.doc(db,'members',account.email));if(!membership.exists())throw Error('このアカウントは閲覧登録されていません。管理者に登録を依頼してください。');}if(token!==epoch)return;privateArea.hidden=false;$('adminArea').hidden=!admin;$('accountStatus').textContent=account.email+(admin?'（管理者）':'（閲覧のみ）');await loadPosts();if(admin&&token===epoch)await loadMembers();}catch(e){if(token===epoch)$('accountStatus').textContent=errorText(e);}
- });
-}catch(e){$('accountStatus').textContent='ログイン機能の準備に失敗しました。通信を確認して再読み込みしてください。 '+errorText(e);}
-</script>
 
+ $('loginButton').onclick=async()=>{
+  const provider=new authApi.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  try{
+   await authApi.signInWithPopup(auth,provider);
+  }catch(error){
+   $('accountStatus').textContent=errorText(error);
+  }
+ };
+ $('logoutButton').onclick=async()=>{
+  try{
+   await authApi.signOut(auth);
+  }catch(error){
+   $('accountStatus').textContent=errorText(error);
+  }
+ };
+
+ authApi.onAuthStateChanged(auth,async account=>{
+  const session=++epoch;
+  user=account;
+  clearPrivateContent();
+  $('loginButton').hidden=!!account;
+  $('logoutButton').hidden=!account;
+
+  if(!account){
+   $('accountStatus').textContent='登録したGoogleアカウントでログインしてください。';
+   return;
+  }
+  $('accountStatus').textContent='閲覧権限を確認中…';
+  try{
+   if(!account.emailVerified){
+    throw Error('メール確認済みのGoogleアカウントが必要です。');
+   }
+   const admin=account.email===adminEmail;
+   if(!admin){
+    const membership=await api.getDoc(api.doc(db,'members',account.email));
+    if(!membership.exists()){
+     throw Error('このアカウントは閲覧登録されていません。管理者に登録を依頼してください。');
+    }
+   }
+   if(session!==epoch)return;
+   privateArea.hidden=false;
+   $('adminArea').hidden=!admin;
+   $('accountStatus').textContent=account.email+(admin?'（管理者）':'（閲覧のみ）');
+   await loadPosts();
+   if(admin&&session===epoch)await loadMembers();
+  }catch(error){
+   if(session===epoch)$('accountStatus').textContent=errorText(error);
+  }
+ });
+}catch(error){
+ $('accountStatus').textContent=
+  'ログイン機能の準備に失敗しました。通信を確認して再読み込みしてください。 '+errorText(error);
+}
+</script>
 </body>
 </html>
