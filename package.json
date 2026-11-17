@@ -1,12 +1,16 @@
 {
   "name": "genba-portal-push",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "express": "^4.21.2",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "firebase-admin": "^13.0.0"
   }
 }
