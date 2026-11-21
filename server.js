@@ -29,35 +29,47 @@ app.use("/api", (req, res, next) => {
   next();
 });
 
-/* Firebaseの秘密鍵はRenderの環境変数から読む */
+/* Firebase設定：秘密情報を出さずに原因を確認 */
 let firebaseApp;
 let serviceAccount;
 let firebaseReady = false;
+let firebaseStage = "環境変数の読み込み";
 
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error("missing configuration");
+  if (!raw || !raw.trim()) throw new Error("missing");
 
+  firebaseStage = "JSONの解析";
   serviceAccount = JSON.parse(raw);
 
-  if (
-    serviceAccount.type !== "service_account" ||
-    serviceAccount.project_id !== PROJECT_ID ||
-    typeof serviceAccount.private_key !== "string" ||
-    typeof serviceAccount.client_email !== "string"
-  ) {
-    throw new Error("invalid configuration");
-  }
+  firebaseStage = "JSONがオブジェクトか確認";
+  if (!serviceAccount || typeof serviceAccount !== "object" ||
+      Array.isArray(serviceAccount)) throw new Error("invalid");
 
-  firebaseApp = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: PROJECT_ID
-  });
+  firebaseStage = "typeの確認";
+  if (serviceAccount.type !== "service_account") throw new Error("invalid");
 
+  firebaseStage = "project_idの確認";
+  if (serviceAccount.project_id !== PROJECT_ID) throw new Error("invalid");
+
+  firebaseStage = "client_emailの確認";
+  if (typeof serviceAccount.client_email !== "string" ||
+      !serviceAccount.client_email.trim()) throw new Error("invalid");
+
+  firebaseStage = "private_keyの確認";
+  if (typeof serviceAccount.private_key !== "string" ||
+      !serviceAccount.private_key.trim()) throw new Error("invalid");
+
+  firebaseStage = "秘密鍵の形式確認";
+  const credential = admin.credential.cert(serviceAccount);
+
+  firebaseStage = "Firebaseの初期化";
+  firebaseApp = admin.initializeApp({ credential, projectId: PROJECT_ID });
   firebaseReady = true;
+  console.log("Firebase設定の読み込み成功（接続は管理者画面で確認）");
 } catch {
-  // 秘密鍵やJSON本文はログに出さない
-  console.error("Firebase接続設定を確認してください。");
+  // エラー本文、JSON、秘密鍵は出力しない。
+  console.error("Firebase設定エラー：失敗した段階＝" + firebaseStage);
 }
 
 function getAuth() {
@@ -146,6 +158,13 @@ function rolePassword(config, role, month) {
 }
 
 async function readIdentity(req) {
+  // 設定不備をログイン切れとして案内しない。
+  if (!firebaseReady) {
+    const error = new Error("Firebaseの接続設定を確認してください。起動ログに失敗した段階が表示されています。");
+    error.status = 503;
+    throw error;
+  }
+
   const authorization = req.get("Authorization") || "";
   const match = authorization.match(/^Bearer\s+(\S+)$/i);
 
